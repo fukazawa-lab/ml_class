@@ -77,7 +77,7 @@ def train_and_evaluate_model(folder, train_path, valid_path):
     shap_values = explainer.shap_values(X_valid)
     
     # SHAP値の形状を確認
-    print(f"SHAP values shape: {shap_values.shape}")
+    # print(f"SHAP values shape: {shap_values.shape}")
 
     feature_names=X_train.columns
     
