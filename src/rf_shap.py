@@ -13,6 +13,9 @@ from sklearn.utils import resample
 import shap
 import matplotlib.pyplot as plt
 
+import warnings
+warnings.filterwarnings('ignore')
+
 def train_and_evaluate_model(folder, train_path, valid_path):
 
     # データのロードと前処理
