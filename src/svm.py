@@ -6,7 +6,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score, precision_score, recall_score, confusion_matrix
 from imblearn.over_sampling import SMOTE
 import os
-import optuna
+
 
 def objective(trial, X_train, y_train, class_weights):
     # LinearSVCのハイパーパラメータ候補
@@ -24,20 +24,6 @@ def objective(trial, X_train, y_train, class_weights):
     return scores.mean()
 
 
-def simple_svm_with_tuning(X_train, y_train_encoded, class_weights, n_trials=20):
-    study = optuna.create_study(direction='maximize')
-    study.optimize(lambda trial: objective(trial, X_train, y_train_encoded, class_weights), n_trials=n_trials)
-
-    print("Best parameters found:", study.best_params)
-    best_model = LinearSVC(
-        C=study.best_params['C'],
-        class_weight=class_weights,
-        random_state=42,
-        max_iter=10000,
-        tol=1e-4
-    )
-    best_model.fit(X_train, y_train_encoded)
-    return best_model
 
 
 def train_and_evaluate_model(folder, train_path, valid_path,
@@ -68,23 +54,19 @@ def train_and_evaluate_model(folder, train_path, valid_path,
     # クラス重みの設定（オプション）
     class_weights = "balanced" if use_class_weight else None
 
-    # モデルの学習（チューニングあり／なし）
-    if do_tuning:
-        model = simple_svm_with_tuning(X_train, y_train_encoded, class_weights)
-    else:
-        best_params = {
-            'C': 0.0033358600741198144
-        }
-        
-        # モデルの構築
-        model = LinearSVC(
-            C=best_params['C'],
-            class_weight=class_weights,
-            random_state=42,
-            max_iter=10000,
-            tol=1e-4
-        )
-        model.fit(X_train, y_train_encoded)
+    best_params = {
+        'C': 0.0033358600741198144
+    }
+    
+    # モデルの構築
+    model = LinearSVC(
+        C=best_params['C'],
+        class_weight=class_weights,
+        random_state=42,
+        max_iter=10000,
+        tol=1e-4
+    )
+    model.fit(X_train, y_train_encoded)
 
     # 予測
     y_pred = model.predict(X_valid)
