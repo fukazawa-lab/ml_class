@@ -9,7 +9,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, confu
 import shap
 import matplotlib.pyplot as plt
 from sklearn.utils import resample
-import os
+
 import shap
 import matplotlib.pyplot as plt
 
@@ -64,7 +64,26 @@ def train_and_evaluate_model(folder, train_path, valid_path):
     conf_matrix_df.to_csv('ml_class/results/confusion_matrix_num_rf.csv')
     
     # メトリクスの計算と表示
-    # print("Accuracy:", accuracy_score(predictions_df['label'], predictions_df['predicted_label']))
-    # print("Precision:", precision_score(predictions_df['label'], predictions_df['predicted_label'], average='macro'))
-    # print("Recall:", recall_score(predictions_df['label'], predictions_df['predicted_label'], average='macro'))
+    print("Accuracy:", accuracy_score(predictions_df['label'], predictions_df['predicted_label']))
+    print("Precision:", precision_score(predictions_df['label'], predictions_df['predicted_label'], average='macro'))
+    print("Recall:", recall_score(predictions_df['label'], predictions_df['predicted_label'], average='macro'))
 
+    # ===== 重要特徴量（Feature Importance） =====
+    importances = model.feature_importances_
+    feature_names = X_train.columns
+
+    importance_df = pd.DataFrame({
+        'feature': feature_names,
+        'importance': importances
+    }).sort_values(by='importance', ascending=False)
+
+    # 上位20件をプロット
+    top_n = 20
+    top_features = importance_df.head(top_n)
+
+    plt.figure(figsize=(8, 6))
+    plt.barh(top_features['feature'][::-1], top_features['importance'][::-1])
+    plt.xlabel("Importance")
+    plt.title(f"Top {top_n} Feature Importances (RandomForest)")
+    plt.tight_layout()
+    plt.show()

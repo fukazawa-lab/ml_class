@@ -86,7 +86,7 @@ def train_and_evaluate_model(folder, train_path, valid_path,
     })
 
     # 出力ディレクトリ
-    output_dir = 'ml_class/results/classification'
+    output_dir = 'ml_class/results'
     os.makedirs(output_dir, exist_ok=True)
 
     # 予測結果の保存

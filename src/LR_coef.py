@@ -44,7 +44,7 @@ def simple_logistic_with_tuning(X_train, y_train_encoded, class_weights, n_trial
 def train_and_evaluate_model(folder, train_path, valid_path,
                              use_smote=False, use_class_weight=False,
                              do_tuning=False,
-                             output_filename="result_num_logistic.csv"):
+                             output_filename="result_logistic.csv"):
 
     # データのロード
     train_df = pd.read_csv(os.path.join(folder, train_path))
@@ -117,4 +117,41 @@ def train_and_evaluate_model(folder, train_path, valid_path,
     # print("Precision:", precision_score(predictions_df['label'], predictions_df['predicted_label'], average='macro'))
     # print("Recall:", recall_score(predictions_df['label'], predictions_df['predicted_label'], average='macro'))
 
+
+    # ===== ロジスティック回帰の係数可視化 =====
+    import matplotlib.pyplot as plt
+
+    coef = model.coef_[0]   # 2値分類前提
+    feature_names = X_train.columns
+
+    coef_df = pd.DataFrame({
+        'feature': feature_names,
+        'coefficient': coef
+    })
+
+    # 絶対値でソート（重要度順）
+    coef_df['abs_coef'] = coef_df['coefficient'].abs()
+    coef_df = coef_df.sort_values(by='abs_coef', ascending=False)
+
+    # 上位20件
+    top_n = 20
+    top_features = coef_df.head(top_n)
+
+    # 可視化
+    plt.figure(figsize=(10, 8))
+
+    colors = ['red' if c > 0 else 'blue' for c in top_features['coefficient']]
+
+    plt.barh(
+        top_features['feature'][::-1],
+        top_features['coefficient'][::-1],
+        color=colors[::-1]
+    )
+
+    plt.axvline(x=0, color='black', linestyle='--')  # 0ライン
+    plt.xlabel("Coefficient")
+    plt.title(f"Top {top_n} Logistic Regression Coefficients")
+    plt.tight_layout()
+    plt.show()
+    
     return predictions_df

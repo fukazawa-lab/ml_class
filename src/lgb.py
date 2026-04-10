@@ -28,7 +28,10 @@ def train_and_evaluate_model(folder, train_path, valid_path):
     y_valid_encoded = label_encoder.transform(y_valid)
     
     # モデルのトレーニングとSHAP解析
-    model = lgb.LGBMClassifier(random_state=42)
+    model = lgb.LGBMClassifier(
+        random_state=42,
+        verbose=-1  # ←これでWarning消える
+    )
     model.fit(X_train, y_train_encoded)
     
     # 予測と評価
@@ -37,11 +40,11 @@ def train_and_evaluate_model(folder, train_path, valid_path):
         'predicted_label': label_encoder.inverse_transform(model.predict(X_valid)),
         **valid_df.drop(columns=['label']).to_dict('series')
     })
-    predictions_df.to_csv('ml_class/results/classification/result_num_lgb.csv', index=False)
+    predictions_df.to_csv('ml_class/results/result_num_lgb.csv', index=False)
     conf_matrix_df = pd.DataFrame(confusion_matrix(predictions_df['label'], predictions_df['predicted_label']),
                                   columns=sorted(set(predictions_df['label']) | set(predictions_df['predicted_label'])),
                                   index=sorted(set(predictions_df['label']) | set(predictions_df['predicted_label'])))
-    conf_matrix_df.to_csv('ml_class/results/classification/confusion_matrix_num_lgb.csv')
+    conf_matrix_df.to_csv('ml_class/results/confusion_matrix_num_lgb.csv')
     
     # メトリクスの計算と表示
     # print("Accuracy:", accuracy_score(predictions_df['label'], predictions_df['predicted_label']))
