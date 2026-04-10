@@ -83,6 +83,17 @@ def train_and_evaluate_model(folder, train_path, valid_path):
 
     plt.figure(figsize=(8, 6))
     plt.barh(top_features['feature'][::-1], top_features['importance'][::-1])
+
+        # ★ 数値を表示
+    for i, v in enumerate(top_features['importance'][::-1]):
+        plt.text(
+            v,
+            i,
+            f"{v:.3f}",
+            va='center',
+            ha='left'
+        )
+    
     plt.xlabel("Importance")
     plt.title(f"Top {top_n} Feature Importances (RandomForest)")
     plt.tight_layout()
