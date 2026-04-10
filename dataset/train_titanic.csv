@@ -1,4 +1,4 @@
-label,Pclass,Age,Sex,SibSp,Parch,Embarked_Q,Embarked_S
+label,客室クラス,年齢,性別,同乗兄弟配偶者数,同乗親子数,乗船港_Q,乗船港_S
 0,3,22,0,0,0,0,1
 0,3,45,1,0,1,0,0
 0,3,42,0,0,1,0,1
