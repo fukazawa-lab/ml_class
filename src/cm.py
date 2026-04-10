@@ -27,14 +27,17 @@ def vis(confusion_matrix_path, results_path):
     precision = precision_score(true_labels, predicted_labels, average='macro')
     recall = recall_score(true_labels, predicted_labels, average='macro')
 
-    print("method, class, accuracy, precision, recall")
-    print(f"proposed, all, {accuracy}, {precision}, {recall}")
+    print("accuracy, precision, recall")
+    print(f"{accuracy}, {precision}, {recall}")
+
+    print("\n")
+    print("class, precision, recall")
 
     # クラスごとのPrecisionとRecall
     unique_labels = sorted(true_labels.unique())
     precisions, recalls, _, _ = precision_recall_fscore_support(true_labels, predicted_labels, labels=unique_labels)
     for label, precision, recall in zip(unique_labels, precisions, recalls):
-        print(f"proposed, {label}, non, {precision}, {recall}")
+        print(f"{label}, {precision}, {recall}")
 
     # ランダム予測のベースラインの計算
     label_counts = true_labels.value_counts(normalize=True).sort_index()
