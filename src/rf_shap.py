@@ -67,9 +67,9 @@ def train_and_evaluate_model(folder, train_path, valid_path):
     conf_matrix_df.to_csv('ml_class/results/confusion_matrix_num_rf.csv')
     
     # メトリクスの計算と表示
-    print("Accuracy:", accuracy_score(predictions_df['label'], predictions_df['predicted_label']))
-    print("Precision:", precision_score(predictions_df['label'], predictions_df['predicted_label'], average='macro'))
-    print("Recall:", recall_score(predictions_df['label'], predictions_df['predicted_label'], average='macro'))
+    # print("Accuracy:", accuracy_score(predictions_df['label'], predictions_df['predicted_label']))
+    # print("Precision:", precision_score(predictions_df['label'], predictions_df['predicted_label'], average='macro'))
+    # print("Recall:", recall_score(predictions_df['label'], predictions_df['predicted_label'], average='macro'))
 
     
     # SHAP解析とプロット
