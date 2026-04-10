@@ -6,26 +6,23 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score, precision_score, recall_score, confusion_matrix
 from imblearn.over_sampling import SMOTE
 import os
-import optuna
 
+def objective(trial, X_train, y_train, class_weights):
+    # LogisticRegressionのハイパーパラメータ
+    C = trial.suggest_float('C', 1e-3, 1e3, log=True)
 
-
-
-def simple_logistic_with_tuning(X_train, y_train_encoded, class_weights, n_trials=20):
-    study = optuna.create_study(direction='maximize')
-    study.optimize(lambda trial: objective(trial, X_train, y_train_encoded, class_weights), n_trials=n_trials)
-
-    print("Best parameters found:", study.best_params)
-
-    best_model = LogisticRegression(
-        C=study.best_params['C'],
+    model = LogisticRegression(
+        C=C,
         class_weight=class_weights,
-        solver='liblinear',
+        solver='liblinear',   # 安定＆小規模データ向き
         max_iter=1000,
         random_state=42
     )
-    best_model.fit(X_train, y_train_encoded)
-    return best_model
+
+    scores = cross_val_score(model, X_train, y_train, cv=3, scoring='accuracy')
+    return scores.mean()
+
+
 
 
 def train_and_evaluate_model(folder, train_path, valid_path,
@@ -56,22 +53,19 @@ def train_and_evaluate_model(folder, train_path, valid_path,
     # クラス重み
     class_weights = "balanced" if use_class_weight else None
 
-    # モデル
-    if do_tuning:
-        # model = simple_logistic_with_tuning(X_train, y_train_encoded, class_weights)
-    else:
-        best_params = {
-            'C': 1.0
-        }
+  
+    best_params = {
+        'C': 1.0
+    }
 
-        model = LogisticRegression(
-            C=best_params['C'],
-            class_weight=class_weights,
-            solver='liblinear',
-            max_iter=1000,
-            random_state=42
-        )
-        model.fit(X_train, y_train_encoded)
+    model = LogisticRegression(
+        C=best_params['C'],
+        class_weight=class_weights,
+        solver='liblinear',
+        max_iter=1000,
+        random_state=42
+    )
+    model.fit(X_train, y_train_encoded)
 
     # 予測
     y_pred = model.predict(X_valid)
