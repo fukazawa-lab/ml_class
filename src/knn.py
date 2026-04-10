@@ -6,7 +6,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score, precision_score, recall_score, confusion_matrix
 from imblearn.over_sampling import SMOTE
 import os
-import optuna
+
 
 def objective(trial, X_train, y_train, class_weights):
     # KNNのハイパーパラメータ候補
@@ -21,18 +21,6 @@ def objective(trial, X_train, y_train, class_weights):
     )
     scores = cross_val_score(model, X_train, y_train, cv=3, scoring='accuracy')
     return scores.mean()
-
-def simple_knn_with_tuning(X_train, y_train_encoded, n_trials=20):
-    study = optuna.create_study(direction='maximize')
-    study.optimize(lambda trial: objective(trial, X_train, y_train_encoded, None), n_trials=n_trials)
-
-    print("Best parameters found:", study.best_params)
-    best_model = KNeighborsClassifier(
-        **study.best_params,
-        n_jobs=-1
-    )
-    best_model.fit(X_train, y_train_encoded)
-    return best_model
 
 
 def train_and_evaluate_model(folder, train_path, valid_path,
@@ -63,19 +51,16 @@ def train_and_evaluate_model(folder, train_path, valid_path,
     # KNNはclass_weightパラメータがないので無視
     class_weights = None
 
-    # モデルの学習（チューニングあり／なし）
-    if do_tuning:
-        model = simple_knn_with_tuning(X_train, y_train_encoded)
-    else:
-        best_params = {'n_neighbors': 1, 'weights': 'distance'}
 
-        model = KNeighborsClassifier(
-            n_neighbors=best_params['n_neighbors'],
-            weights=best_params['weights'],
-            n_jobs=-1
-        )
+    best_params = {'n_neighbors': 1, 'weights': 'distance'}
 
-        model.fit(X_train, y_train_encoded)
+    model = KNeighborsClassifier(
+        n_neighbors=best_params['n_neighbors'],
+        weights=best_params['weights'],
+        n_jobs=-1
+    )
+
+    model.fit(X_train, y_train_encoded)
 
     # 予測
     y_pred = model.predict(X_valid)
