@@ -8,20 +8,7 @@ from imblearn.over_sampling import SMOTE
 import os
 import optuna
 
-def objective(trial, X_train, y_train, class_weights):
-    # LogisticRegressionのハイパーパラメータ
-    C = trial.suggest_float('C', 1e-3, 1e3, log=True)
 
-    model = LogisticRegression(
-        C=C,
-        class_weight=class_weights,
-        solver='liblinear',   # 安定＆小規模データ向き
-        max_iter=1000,
-        random_state=42
-    )
-
-    scores = cross_val_score(model, X_train, y_train, cv=3, scoring='accuracy')
-    return scores.mean()
 
 
 def simple_logistic_with_tuning(X_train, y_train_encoded, class_weights, n_trials=20):
@@ -71,7 +58,7 @@ def train_and_evaluate_model(folder, train_path, valid_path,
 
     # モデル
     if do_tuning:
-        model = simple_logistic_with_tuning(X_train, y_train_encoded, class_weights)
+        # model = simple_logistic_with_tuning(X_train, y_train_encoded, class_weights)
     else:
         best_params = {
             'C': 1.0
