@@ -147,7 +147,16 @@ def train_and_evaluate_model(folder, train_path, valid_path,
         top_features['coefficient'][::-1],
         color=colors[::-1]
     )
-
+    
+    for i, v in enumerate(top_features['coefficient'][::-1]):
+        plt.text(
+            v,
+            i,
+            f"{v:.3f}",
+            va='center',
+            ha='left' if v > 0 else 'right'
+        )
+    
     plt.axvline(x=0, color='black', linestyle='--')  # 0ライン
     plt.xlabel("Coefficient")
     plt.title(f"Top {top_n} Logistic Regression Coefficients")
