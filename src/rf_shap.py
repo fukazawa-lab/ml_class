@@ -10,6 +10,9 @@ import shap
 import matplotlib.pyplot as plt
 from sklearn.utils import resample
 
+
+import math
+import matplotlib.pyplot as plt
 import shap
 import matplotlib.pyplot as plt
 
@@ -67,9 +70,9 @@ def train_and_evaluate_model(folder, train_path, valid_path):
     conf_matrix_df.to_csv('ml_class/results/confusion_matrix_num_rf.csv')
     
     # メトリクスの計算と表示
-    # print("Accuracy:", accuracy_score(predictions_df['label'], predictions_df['predicted_label']))
-    # print("Precision:", precision_score(predictions_df['label'], predictions_df['predicted_label'], average='macro'))
-    # print("Recall:", recall_score(predictions_df['label'], predictions_df['predicted_label'], average='macro'))
+    print("Accuracy:", accuracy_score(predictions_df['label'], predictions_df['predicted_label']))
+    print("Precision:", precision_score(predictions_df['label'], predictions_df['predicted_label'], average='macro'))
+    print("Recall:", recall_score(predictions_df['label'], predictions_df['predicted_label'], average='macro'))
 
     
     # SHAP解析とプロット
@@ -77,7 +80,7 @@ def train_and_evaluate_model(folder, train_path, valid_path):
     shap_values = explainer.shap_values(X_valid)
     
     # SHAP値の形状を確認
-    # print(f"SHAP values shape: {shap_values.shape}")
+    print(f"SHAP values shape: {shap_values.shape}")
 
     feature_names=X_train.columns
     
@@ -152,17 +155,50 @@ def train_and_evaluate_model(folder, train_path, valid_path):
 
     top_20_features = shap_df.abs().mean().nlargest(30).index
     
-    plt.figure(figsize=(15, 30))
+    # plt.figure(figsize=(15, 30))
+    # for i, feature in enumerate(top_20_features):
+    #     plt.subplot(11, 3, i + 1)
+    #     sc = plt.scatter(X_valid[feature], shap_df[feature], c=X_valid[feature], cmap="coolwarm", alpha=0.6, edgecolors="k")
+    #     plt.colorbar(sc, label="Feature Value")
+    #     plt.title(feature)
+    #     plt.xlabel("Feature Value")
+    #     plt.ylabel("SHAP Value")
+    # plt.tight_layout()
+    # plt.show()
+
+
+
+ 
+
+    n_features = len(top_20_features)
+    ncols = 2
+    nrows = math.ceil(n_features / ncols)
+    
+    plt.figure(figsize=(10, 3.4 * nrows))
+    
+    cmap = shap.plots.colors.red_blue
+    
     for i, feature in enumerate(top_20_features):
-        plt.subplot(11, 3, i + 1)
-        sc = plt.scatter(X_valid[feature], shap_df[feature], c=X_valid[feature], cmap="coolwarm", alpha=0.6, edgecolors="k")
-        plt.colorbar(sc, label="Feature Value")
-        plt.title(feature)
-        plt.xlabel("Feature Value")
-        plt.ylabel("SHAP Value")
+        plt.subplot(nrows, ncols, i + 1)
+    
+        plt.scatter(
+            X_valid[feature],
+            shap_df[feature],
+            c=X_valid[feature],
+            cmap=cmap,
+            s=15,
+            alpha=0.7,
+            edgecolors="none"
+        )
+    
+        plt.axhline(0, color="gray", linestyle="--", linewidth=0.8)
+    
+        plt.title(feature, fontsize=15)
+        plt.xlabel("特徴量の値", fontsize=13)
+        plt.ylabel("SHAP値", fontsize=13)
+    
     plt.tight_layout()
     plt.show()
-
 
     #         # TreeExplainer でモデルとデータ
     # explainer = shap.TreeExplainer(model)
