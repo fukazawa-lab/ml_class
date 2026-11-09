@@ -1,28 +1,29 @@
+
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import cross_val_score
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.metrics import accuracy_score, precision_score, recall_score, confusion_matrix
 from imblearn.over_sampling import SMOTE
 import os
 
+
 def objective(trial, X_train, y_train, class_weights):
-    # LogisticRegressionのハイパーパラメータ
     C = trial.suggest_float('C', 1e-3, 1e3, log=True)
 
     model = LogisticRegression(
         C=C,
         class_weight=class_weights,
-        solver='liblinear',   # 安定＆小規模データ向き
+        solver='liblinear',
         max_iter=1000,
         random_state=42
     )
 
-    scores = cross_val_score(model, X_train, y_train, cv=3, scoring='accuracy')
+    scores = cross_val_score(
+        model, X_train, y_train, cv=3, scoring='accuracy'
+    )
     return scores.mean()
-
-
 
 
 def train_and_evaluate_model(folder, train_path, valid_path,
@@ -44,16 +45,34 @@ def train_and_evaluate_model(folder, train_path, valid_path,
     y_train_encoded = label_encoder.fit_transform(y_train)
     y_valid_encoded = label_encoder.transform(y_valid)
 
+    # ===== 追加：特徴量の標準化 =====
+    scaler = StandardScaler()
+
+    # 学習データで平均・標準偏差を計算
+    X_train_scaled = pd.DataFrame(
+        scaler.fit_transform(X_train),
+        columns=X_train.columns,
+        index=X_train.index
+    )
+
+    # 検証データには学習データの平均・標準偏差を適用
+    X_valid_scaled = pd.DataFrame(
+        scaler.transform(X_valid),
+        columns=X_valid.columns,
+        index=X_valid.index
+    )
+
     # SMOTE適用（オプション）
     if use_smote:
         smote = SMOTE(random_state=42)
-        X_train, y_train_encoded = smote.fit_resample(X_train, y_train_encoded)
+        X_train_scaled, y_train_encoded = smote.fit_resample(
+            X_train_scaled, y_train_encoded
+        )
         print(f"SMOTE applied: {np.bincount(y_train_encoded)}")
 
     # クラス重み
     class_weights = "balanced" if use_class_weight else None
 
-  
     best_params = {
         'C': 1.0
     }
@@ -65,13 +84,16 @@ def train_and_evaluate_model(folder, train_path, valid_path,
         max_iter=1000,
         random_state=42
     )
-    model.fit(X_train, y_train_encoded)
 
-    # 予測
-    y_pred = model.predict(X_valid)
+    # 標準化後のデータで学習
+    model.fit(X_train_scaled, y_train_encoded)
 
+    # 標準化後の検証データで予測
+    y_pred = model.predict(X_valid_scaled)
+
+    # 出力CSVには元の特徴量を保存
     predictions_df = pd.DataFrame({
-        'label': y_valid,
+        'label': y_valid.reset_index(drop=True),
         'predicted_label': label_encoder.inverse_transform(y_pred),
         **X_valid.reset_index(drop=True).to_dict('series')
     })
@@ -87,32 +109,35 @@ def train_and_evaluate_model(folder, train_path, valid_path,
     confusion_filename = "confusion_matrix_lr.csv"
     confusion_path = os.path.join(output_dir, confusion_filename)
 
-    conf_matrix = confusion_matrix(predictions_df['label'], predictions_df['predicted_label'])
-    conf_matrix_df = pd.DataFrame(conf_matrix,
-                                  columns=sorted(label_encoder.classes_),
-                                  index=sorted(label_encoder.classes_))
+    conf_matrix = confusion_matrix(
+        predictions_df['label'],
+        predictions_df['predicted_label'],
+        labels=label_encoder.classes_
+    )
+
+    conf_matrix_df = pd.DataFrame(
+        conf_matrix,
+        columns=label_encoder.classes_,
+        index=label_encoder.classes_
+    )
     conf_matrix_df.to_csv(confusion_path)
-
-    # 評価
-    # print("Accuracy:", accuracy_score(predictions_df['label'], predictions_df['predicted_label']))
-    # print("Precision:", precision_score(predictions_df['label'], predictions_df['predicted_label'], average='macro'))
-    # print("Recall:", recall_score(predictions_df['label'], predictions_df['predicted_label'], average='macro'))
-
 
     # ===== ロジスティック回帰の係数可視化 =====
     import matplotlib.pyplot as plt
 
-    coef = model.coef_[0]   # 2値分類前提
-    feature_names = X_train.columns
+    coef = model.coef_[0]  # 2値分類前提
+    feature_names = X_train_scaled.columns
 
     coef_df = pd.DataFrame({
         'feature': feature_names,
         'coefficient': coef
     })
 
-    # 絶対値でソート（重要度順）
+    # 絶対値でソート
     coef_df['abs_coef'] = coef_df['coefficient'].abs()
-    coef_df = coef_df.sort_values(by='abs_coef', ascending=False)
+    coef_df = coef_df.sort_values(
+        by='abs_coef', ascending=False
+    )
 
     # 上位20件
     top_n = 20
@@ -121,14 +146,17 @@ def train_and_evaluate_model(folder, train_path, valid_path,
     # 可視化
     plt.figure(figsize=(10, 8))
 
-    colors = ['red' if c > 0 else 'blue' for c in top_features['coefficient']]
+    colors = [
+        'red' if c > 0 else 'blue'
+        for c in top_features['coefficient']
+    ]
 
     plt.barh(
         top_features['feature'][::-1],
         top_features['coefficient'][::-1],
         color=colors[::-1]
     )
-    
+
     for i, v in enumerate(top_features['coefficient'][::-1]):
         plt.text(
             v,
@@ -137,11 +165,11 @@ def train_and_evaluate_model(folder, train_path, valid_path,
             va='center',
             ha='left' if v > 0 else 'right'
         )
-    
-    plt.axvline(x=0, color='black', linestyle='--')  # 0ライン
-    plt.xlabel("Coefficient")
+
+    plt.axvline(x=0, color='black', linestyle='--')
+    plt.xlabel("Standardized Coefficient")
     plt.title(f"Top {top_n} Logistic Regression Coefficients")
     plt.tight_layout()
     plt.show()
-    
+
     return predictions_df
